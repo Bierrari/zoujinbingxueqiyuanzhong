@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>冰雪连连看</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0c2461 0%, #1e3799 50%, #4a69bd 100%);
+            color: #e6f7ff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* 雪花容器 - 生成多个可见雪花 */
+        .snow-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .snowflake {
+            position: absolute;
+            color: #ffffff;
+            opacity: 0.7;
+            font-size: 1.2rem;
+            animation: snowfall linear infinite;
+        }
+
+        @keyframes snowfall {
+            0% {
+                transform: translateY(-50px) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            90% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(100vh) translateX(50px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes snowfall-slow {
+            0% {
+                transform: translateY(-50px) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.5;
+            }
+            90% {
+                opacity: 0.5;
+            }
+            100% {
+                transform: translateY(100vh) translateX(-30px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes snowfall-fast {
+            0% {
+                transform: translateY(-50px) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.8;
+            }
+            90% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(100vh) translateX(80px);
+                opacity: 0;
+            }
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            position: relative;
+        }
+
+        /* 返回首页按钮样式 */
+        .home-btn {
+            position: absolute;
+            top: 0;
+            left: 20px;
+        }
+        
+        .home-btn a {
+            color: #e6f7ff;
+            text-decoration: none;
+            font-size: 1.1rem;
+            padding: 10px 20px;
+            background-color: rgba(30, 136, 229, 0.3);
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(100, 181, 246, 0.5);
+        }
+        
+        .home-btn a:hover {
+            background-color: rgba(30, 136, 229, 0.5);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(173, 216, 230, 0.7);
+            letter-spacing: 2px;
+            position: relative;
+            display: inline-block;
+        }
+
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #4fc3f7, transparent);
+        }
+
+        .game-description {
+            font-size: 1.2rem;
+            margin: 0 auto 25px;
+            max-width: 800px;
+            text-align: center;
+            line-height: 1.6;
+            color: #b3e0ff;
+            padding: 0 20px;
+        }
+
+        .game-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            width: 100%;
+        }
+
+        .game-board-container {
+            flex: 1;
+            min-width: 500px;
+            max-width: 700px;
+            background: rgba(13, 71, 161, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(100, 181, 246, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-board-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: -1;
+            animation: boardSnow 20s linear infinite;
+        }
+
+        @keyframes boardSnow {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(30px) rotate(5deg); }
+        }
+
+        .game-info {
+            flex: 0 0 300px;
+            background: rgba(13, 71, 161, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(100, 181, 246, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .stat-box {
+            background: rgba(30, 136, 229, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(100, 181, 246, 0.3);
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #4fc3f7;
+            text-shadow: 0 0 8px rgba(79, 195, 247, 0.5);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #b3e0ff;
+            margin-top: 5px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        button {
+            padding: 15px;
+            background: linear-gradient(to bottom, #0288d1, #01579b);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: 1px solid rgba(100, 181, 246, 0.5);
+        }
+
+        button:hover {
+            background: linear-gradient(to bottom, #039be5, #0277bd);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button:disabled {
+            background: linear-gradient(to bottom, #546e7a, #37474f);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* 返回首页按钮样式 */
+        .btn-home {
+            background: linear-gradient(to bottom, #7b1fa2, #4a148c);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none;
+            border: 1px solid rgba(186, 104, 200, 0.5);
+            padding: 15px;
+        }
+        
+        .btn-home:hover {
+            background: linear-gradient(to bottom, #8e24aa, #6a1b9a);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .icon-selector {
+            margin-top: 10px;
+        }
+
+        .icon-selector h3 {
+            margin-bottom: 10px;
+            color: #b3e0ff;
+            text-align: center;
+        }
+
+        .icon-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .icon-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            background: rgba(30, 136, 229, 0.2);
+            font-size: 1.5rem;
+        }
+
+        .icon-option.active {
+            border-color: #4fc3f7;
+            background: rgba(79, 195, 247, 0.3);
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-gap: 8px;
+            margin: 0 auto;
+            width: fit-content;
+            background: rgba(13, 71, 161, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(100, 181, 246, 0.3);
+        }
+
+        .tile {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tile::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tile:hover::after {
+            opacity: 1;
+        }
+
+        .tile.selected {
+            background: rgba(79, 195, 247, 0.3);
+            border-color: #4fc3f7;
+            transform: scale(1.05);
+        }
+
+        /* 关键修改：消除后的样式 - 不再隐藏，改为半透明+灰色 */
+        .tile.matched {
+            opacity: 0.3;
+            color: #888888;
+            cursor: default;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .game-status {
+            text-align: center;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 10px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(13, 71, 161, 0.3);
+            border: 2px solid rgba(100, 181, 246, 0.5);
+        }
+
+        .connection-line {
+            position: absolute;
+            background-color: rgba(79, 195, 247, 0.7);
+            height: 4px;
+            transform-origin: 0 0;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .connection-line::before,
+        .connection-line::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #4fc3f7;
+            border-radius: 50%;
+            top: -4px;
+        }
+
+        .connection-line::before {
+            left: 0;
+        }
+
+        .connection-line::after {
+            right: 0;
+        }
+
+        .instructions {
+            margin-top: 30px;
+            background: rgba(13, 71, 161, 0.3);
+            padding: 20px;
+            border-radius: 15px;
+            max-width: 800px;
+            border: 2px solid rgba(100, 181, 246, 0.5);
+            width: 100%;
+        }
+
+        .instructions h2 {
+            margin-bottom: 15px;
+            color: #b3e0ff;
+            text-align: center;
+        }
+
+        .instructions ul {
+            list-style-type: none;
+            padding-left: 0;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .instructions li {
+            padding: 10px 15px;
+            background: rgba(30, 136, 229, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions i {
+            color: #4fc3f7;
+        }
+
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #b3e0ff;
+            font-size: 0.9rem;
+            padding: 15px;
+            border-top: 1px solid rgba(100, 181, 246, 0.3);
+            width: 100%;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1100px) {
+            .game-area {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .game-board-container, .game-info {
+                width: 100%;
+                max-width: 700px;
+                min-width: unset;
+            }
+            
+            .game-board {
+                grid-template-columns: repeat(8, 1fr);
+            }
+            
+            .tile {
+                width: 55px;
+                height: 55px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .game-board {
+                grid-template-columns: repeat(6, 1fr);
+            }
+            
+            .tile {
+                width: 50px;
+                height: 50px;
+                font-size: 1.7rem;
+            }
+            
+            h1 {
+                font-size: 2.8rem;
+            }
+            
+            .instructions ul {
+                grid-template-columns: 1fr;
+            }
+            
+            .home-btn {
+                position: relative;
+                top: 0;
+                left: 0;
+                margin-bottom: 15px;
+                text-align: center;
+            }
+            
+            .home-btn a {
+                justify-content: center;
+                display: inline-flex;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-board {
+                grid-template-columns: repeat(4, 1fr);
+                grid-gap: 5px;
+                padding: 10px;
+            }
+            
+            .tile {
+                width: 65px;
+                height: 65px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .home-btn a {
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
+        }
+
+        .win-message {
+            font-size: 2rem;
+            color: #4fc3f7;
+            text-align: center;
+            animation: pulse 1.5s infinite;
+            margin-top: 10px;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+            100% { opacity: 0.7; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 雪花容器 -->
+    <div class="snow-container" id="snowContainer"></div>
+
+    <div class="container">
+        <header>
+            <!-- 添加返回首页按钮 -->
+            <div class="home-btn">
+                <a href="index.html">
+                    <i class="fas fa-home"></i> 返回首页
+                </a>
+            </div>
+            
+            <h1><i class="fas fa-snowflake"></i> 冰雪连连看 <i class="fas fa-snowflake"></i></h1>
+            <p class="game-description">在冰雪王国中连接相同的图标，消除所有方块即可获胜！选择两个相同的图标，如果它们可以通过不超过两个拐角的直线连接，即可消除。</p>
+        </header>
+        
+        <div class="game-area">
+            <div class="game-board-container">
+                <div class="game-board" id="gameBoard">
+                    <!-- 游戏方块将通过JavaScript动态生成 -->
+                </div>
+                <div class="game-status" id="gameStatus">
+                    游戏准备中... 点击"开始游戏"按钮
+                </div>
+            </div>
+            
+            <div class="game-info">
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="time">0</div>
+                        <div class="stat-label">时间(秒)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="moves">0</div>
+                        <div class="stat-label">移动次数</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="score">1000</div>
+                        <div class="stat-label">得分</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="remaining">0</div>
+                        <div class="stat-label">剩余方块</div>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <button id="startBtn">
+                        <i class="fas fa-play-circle"></i> 开始游戏
+                    </button>
+                    <button id="restartBtn" disabled>
+                        <i class="fas fa-redo-alt"></i> 重新开始
+                    </button>
+                    <button id="hintBtn" disabled>
+                        <i class="fas fa-lightbulb"></i> 提示 (剩余: <span id="hintCount">3</span>)
+                    </button>
+                    <button id="shuffleBtn" disabled>
+                        <i class="fas fa-random"></i> 重新排列
+                    </button>
+                    <!-- 添加返回首页按钮 -->
+                    <a href="index.html" class="btn-home">
+                        <i class="fas fa-home"></i> 返回首页
+                    </a>
+                </div>
+                
+                <div class="icon-selector">
+                    <h3><i class="fas fa-icons"></i> 图标主题</h3>
+                    <div class="icon-options">
+                        <div class="icon-option active" data-theme="snow">
+                            <i class="fas fa-snowflake"></i>
+                        </div>
+                        <div class="icon-option" data-theme="ice">
+                            <i class="fas fa-icicles"></i>
+                        </div>
+                        <div class="icon-option" data-theme="winter">
+                            <i class="fas fa-mitten"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h2><i class="fas fa-info-circle"></i> 游戏规则</h2>
+            <ul>
+                <li><i class="fas fa-mouse-pointer"></i> 点击选择两个相同的图标</li>
+                <li><i class="fas fa-project-diagram"></i> 两个图标可以通过不超过两个拐角的直线连接</li>
+                <li><i class="fas fa-tachometer-alt"></i> 消除所有图标即可获胜</li>
+                <li><i class="fas fa-star"></i> 基础分1000分，时间越少，移动次数越少，得分越高</li>
+                <li><i class="fas fa-bolt"></i> 使用提示功能可以获得帮助</li>
+                <li><i class="fas fa-random"></i> 重新排列可以打乱剩余图标</li>
+            </ul>
+        </div>
+        
+        <footer>
+            <p>设计灵感来源于冰雪奇缘主题</p>
+        </footer>
+    </div>
+
+    <script>
+        // 等待DOM加载完成（jQuery方式）
+        $(document).ready(function() {
+            // 游戏配置
+            const config = {
+                rows: 8,
+                cols: 8,
+                baseScore: 1000,
+                timePenalty: 3,
+                movePenalty: 5
+            };
+            
+            // 图标集合
+            const iconSets = {
+                snow: ['❄', '⛄', '🧊', '🎿', '🏔️', '🌨️', '🔔', '🎁'],
+                ice: ['🧊', '✨', '⭐', '💎', '🔮', '🌟', '💠', '🔷'],
+                winter: ['🎄', '🎁', '🕯️', '🔔', '❄', '🌟', '⛄', '🧣']
+            };
+            
+            // 游戏状态
+            let gameState = {
+                board: [],
+                selectedTiles: [],
+                gameStarted: false,
+                gameCompleted: false,
+                timeElapsed: 0,
+                moves: 0,
+                score: config.baseScore,
+                remainingTiles: 0,
+                timer: null,
+                hintsUsed: 0,
+                maxHints: 3,
+                currentTheme: 'snow'
+            };
+            
+            // jQuery DOM元素缓存
+            const $gameBoard = $('#gameBoard');
+            const $gameStatus = $('#gameStatus');
+            const $startBtn = $('#startBtn');
+            const $restartBtn = $('#restartBtn');
+            const $hintBtn = $('#hintBtn');
+            const $shuffleBtn = $('#shuffleBtn');
+            const $timeDisplay = $('#time');
+            const $movesDisplay = $('#moves');
+            const $scoreDisplay = $('#score');
+            const $remainingDisplay = $('#remaining');
+            const $hintCountDisplay = $('#hintCount');
+            const $iconOptions = $('.icon-option');
+            const $snowContainer = $('#snowContainer');
+
+            // 生成雪花
+            function generateSnowflakes() {
+                $snowContainer.empty();
+                const snowCount = 50;
+
+                for (let i = 0; i < snowCount; i++) {
+                    const $snowflake = $('<div>').addClass('snowflake').html('<i class="fas fa-snowflake"></i>');
+                    const left = Math.random() * 100;
+                    const size = Math.random() * 1.5 + 0.5;
+                    const duration = Math.random() * 20 + 10;
+                    const animationType = Math.random();
+
+                    $snowflake.css({
+                        left: `${left}vw`,
+                        fontSize: `${size}rem`,
+                        animationDuration: `${duration}s`,
+                        animationDelay: `${Math.random() * 10}s`
+                    });
+
+                    if (animationType < 0.33) {
+                        $snowflake.css('animationName', 'snowfall');
+                    } else if (animationType < 0.66) {
+                        $snowflake.css('animationName', 'snowfall-slow');
+                    } else {
+                        $snowflake.css('animationName', 'snowfall-fast');
+                    }
+
+                    $snowContainer.append($snowflake);
+                }
+            }
+            
+            // 初始化游戏
+            function initGame() {
+                gameState.selectedTiles = [];
+                gameState.gameStarted = false;
+                gameState.gameCompleted = false;
+                gameState.timeElapsed = 0;
+                gameState.moves = 0;
+                gameState.score = config.baseScore;
+                gameState.hintsUsed = 0;
+                
+                $timeDisplay.text('0');
+                $movesDisplay.text('0');
+                $scoreDisplay.text(gameState.score);
+                $hintCountDisplay.text(gameState.maxHints);
+                $gameBoard.empty();
+                
+                $startBtn.prop('disabled', false);
+                $restartBtn.prop('disabled', true);
+                $hintBtn.prop('disabled', true);
+                $shuffleBtn.prop('disabled', true);
+                
+                $gameStatus.text('点击"开始游戏"按钮开始').attr('class', 'game-status');
+                
+                if (gameState.timer) {
+                    clearInterval(gameState.timer);
+                    gameState.timer = null;
+                }
+                
+                $('.connection-line').remove();
+                generateSnowflakes();
+            }
+            
+            // 开始游戏
+            function startGame() {
+                initGame();
+                createBoard();
+                
+                gameState.gameStarted = true;
+                gameState.remainingTiles = config.rows * config.cols;
+                $remainingDisplay.text(gameState.remainingTiles);
+                
+                $startBtn.prop('disabled', true);
+                $restartBtn.prop('disabled', false);
+                $hintBtn.prop('disabled', false);
+                $shuffleBtn.prop('disabled', false);
+                
+                $gameStatus.text('游戏进行中... 找到并连接相同的图标');
+                
+                gameState.timer = setInterval(() => {
+                    gameState.timeElapsed++;
+                    $timeDisplay.text(gameState.timeElapsed);
+                    updateScore();
+                }, 1000);
+            }
+            
+            // 创建游戏板
+            function createBoard() {
+                const icons = [...iconSets[gameState.currentTheme]];
+                const iconPairs = [];
+                const totalTiles = config.rows * config.cols;
+                const pairsNeeded = totalTiles / 2;
+                
+                for (let i = 0; i < pairsNeeded; i++) {
+                    const iconIndex = i % icons.length;
+                    iconPairs.push(icons[iconIndex], icons[iconIndex]);
+                }
+                
+                shuffleArray(iconPairs);
+                
+                gameState.board = [];
+                let tileIndex = 0;
+                
+                $gameBoard.css('gridTemplateColumns', `repeat(${config.cols}, 1fr)`);
+                
+                for (let row = 0; row < config.rows; row++) {
+                    gameState.board[row] = [];
+                    for (let col = 0; col < config.cols; col++) {
+                        const icon = iconPairs[tileIndex];
+                        gameState.board[row][col] = {
+                            icon: icon,
+                            matched: false,
+                            row: row,
+                            col: col
+                        };
+                        
+                        const $tile = $('<div>')
+                            .addClass('tile')
+                            .data({ row, col, icon })
+                            .text(icon)
+                            .on('click', () => selectTile(row, col, $tile[0]));
+                        
+                        $gameBoard.append($tile);
+                        tileIndex++;
+                    }
+                }
+            }
+            
+            // 选择方块
+            function selectTile(row, col, tileElement) {
+                const $tileElement = $(tileElement);
+                
+                if (!gameState.gameStarted || gameState.gameCompleted || gameState.board[row][col].matched) {
+                    return;
+                }
+                
+                if (gameState.selectedTiles.length === 2) {
+                    clearSelection();
+                }
+                
+                if (gameState.selectedTiles.length === 1 && 
+                    gameState.selectedTiles[0].row === row && 
+                    gameState.selectedTiles[0].col === col) {
+                    clearSelection();
+                    return;
+                }
+                
+                gameState.selectedTiles.push({row, col, element: tileElement});
+                $tileElement.addClass('selected');
+                
+                if (gameState.selectedTiles.length === 2) {
+                    const tile1 = gameState.selectedTiles[0];
+                    const tile2 = gameState.selectedTiles[1];
+                    
+                    const icon1 = gameState.board[tile1.row][tile1.col].icon;
+                    const icon2 = gameState.board[tile2.row][tile2.col].icon;
+                    
+                    if (icon1 !== icon2) {
+                        setTimeout(() => {
+                            clearSelection();
+                            $gameStatus.text('图标不相同！');
+                            setTimeout(() => {
+                                if (gameState.gameStarted && !gameState.gameCompleted) {
+                                    $gameStatus.text('游戏进行中... 找到并连接相同的图标');
+                                }
+                            }, 1000);
+                        }, 500);
+                        gameState.moves++;
+                        $movesDisplay.text(gameState.moves);
+                        updateScore();
+                        return;
+                    }
+                    
+                    if (canConnect(tile1.row, tile1.col, tile2.row, tile2.col)) {
+                        setTimeout(() => {
+                            matchTiles(tile1, tile2);
+                            clearSelection();
+                            checkGameCompletion();
+                        }, 300);
+                    } else {
+                        setTimeout(() => {
+                            clearSelection();
+                            $gameStatus.text('无法连接这两个图标！');
+                            setTimeout(() => {
+                                if (gameState.gameStarted && !gameState.gameCompleted) {
+                                    $gameStatus.text('游戏进行中... 找到并连接相同的图标');
+                                }
+                            }, 1000);
+                        }, 500);
+                    }
+                    
+                    gameState.moves++;
+                    $movesDisplay.text(gameState.moves);
+                    updateScore();
+                }
+            }
+            
+            // 清除选择
+            function clearSelection() {
+                $(gameState.selectedTiles).each((index, tile) => {
+                    $(tile.element).removeClass('selected');
+                });
+                gameState.selectedTiles = [];
+                $('.connection-line').remove();
+            }
+            
+            // 匹配成功处理 - 关键修改：移除fadeOut，仅添加matched类
+            function matchTiles(tile1, tile2) {
+                gameState.board[tile1.row][tile1.col].matched = true;
+                gameState.board[tile2.row][tile2.col].matched = true;
+                
+                // 仅添加matched类，不再隐藏/淡出
+                $(tile1.element).addClass('matched');
+                $(tile2.element).addClass('matched');
+                
+                gameState.remainingTiles -= 2;
+                $remainingDisplay.text(gameState.remainingTiles);
+                
+                gameState.score += 50;
+                $scoreDisplay.text(gameState.score);
+            }
+            
+            // 检查游戏完成
+            function checkGameCompletion() {
+                if (gameState.remainingTiles === 0) {
+                    gameState.gameCompleted = true;
+                    clearInterval(gameState.timer);
+                    
+                    $gameStatus.html('<div class="win-message">恭喜你！游戏胜利！</div>')
+                        .css('color', '#4fc3f7')
+                        .fadeTo(500, 0.8)
+                        .fadeTo(500, 1)
+                        .fadeTo(500, 0.8)
+                        .fadeTo(500, 1);
+                    
+                    $hintBtn.prop('disabled', true);
+                    $shuffleBtn.prop('disabled', true);
+                }
+            }
+            
+            // 更新分数
+            function updateScore() {
+                const timePenalty = gameState.timeElapsed * config.timePenalty;
+                const movePenalty = gameState.moves * config.movePenalty;
+                const totalPenalty = timePenalty + movePenalty;
+                
+                gameState.score = Math.max(0, config.baseScore - totalPenalty);
+                $scoreDisplay.text(gameState.score);
+            }
+
+            // ========== 核心路径检测逻辑 ==========
+            // 辅助函数：判断位置是否为空（已消除/超出棋盘）
+            function isEmpty(row, col) {
+                if (row < 0 || row >= config.rows || col < 0 || col >= config.cols) return true;
+                return gameState.board[row][col].matched;
+            }
+
+            // 场景1：0拐角 - 直线路径是否畅通
+            function isStraightPathClear(r1, c1, r2, c2) {
+                // 水平直线
+                if (r1 === r2) {
+                    const minCol = Math.min(c1, c2);
+                    const maxCol = Math.max(c1, c2);
+                    for (let c = minCol; c <= maxCol; c++) {
+                        if (c !== c1 && c !== c2 && !isEmpty(r1, c)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+
+                // 垂直直线
+                if (c1 === c2) {
+                    const minRow = Math.min(r1, r2);
+                    const maxRow = Math.max(r1, r2);
+                    for (let r = minRow; r <= maxRow; r++) {
+                        if (r !== r1 && r !== r2 && !isEmpty(r, c1)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+
+                return false;
+            }
+
+            // 场景2：1拐角 - 查找合法的L型路径
+            function findOneCornerPath(r1, c1, r2, c2) {
+                // 内部拐角点1：(r1, c2)
+                if (isEmpty(r1, c2)) {
+                    if (isStraightPathClear(r1, c1, r1, c2) && isStraightPathClear(r1, c2, r2, c2)) {
+                        return [r1, c1, r1, c2, r2, c2];
+                    }
+                }
+
+                // 内部拐角点2：(r2, c1)
+                if (isEmpty(r2, c1)) {
+                    if (isStraightPathClear(r1, c1, r2, c1) && isStraightPathClear(r2, c1, r2, c2)) {
+                        return [r1, c1, r2, c1, r2, c2];
+                    }
+                }
+
+                // 外部拐角点 - 左侧外
+                if (isEmpty(r1, -1) && isStraightPathClear(r1, c1, r1, -1) && isStraightPathClear(r1, -1, r2, c2)) {
+                    return [r1, c1, r1, -1, r2, c2];
+                }
+                // 外部拐角点 - 右侧外
+                if (isEmpty(r1, config.cols) && isStraightPathClear(r1, c1, r1, config.cols) && isStraightPathClear(r1, config.cols, r2, c2)) {
+                    return [r1, c1, r1, config.cols, r2, c2];
+                }
+                // 外部拐角点 - 上侧外
+                if (isEmpty(-1, c1) && isStraightPathClear(r1, c1, -1, c1) && isStraightPathClear(-1, c1, r2, c2)) {
+                    return [r1, c1, -1, c1, r2, c2];
+                }
+                // 外部拐角点 - 下侧外
+                if (isEmpty(config.rows, c1) && isStraightPathClear(r1, c1, config.rows, c1) && isStraightPathClear(config.rows, c1, r2, c2)) {
+                    return [r1, c1, config.rows, c1, r2, c2];
+                }
+
+                return null;
+            }
+
+            // 场景3：2拐角 - 查找合法的Z型/U型路径
+            function findTwoCornerPath(r1, c1, r2, c2) {
+                // 上边界外路径
+                for (let c = -1; c <= config.cols; c++) {
+                    if (isEmpty(-1, c) && isStraightPathClear(r1, c1, -1, c) && isStraightPathClear(-1, c, r2, c2)) {
+                        return [r1, c1, -1, c, r2, c, r2, c2];
+                    }
+                }
+                // 下边界外路径
+                for (let c = -1; c <= config.cols; c++) {
+                    if (isEmpty(config.rows, c) && isStraightPathClear(r1, c1, config.rows, c) && isStraightPathClear(config.rows, c, r2, c2)) {
+                        return [r1, c1, config.rows, c, r2, c, r2, c2];
+                    }
+                }
+
+                // 左边界外路径
+                for (let r = -1; r <= config.rows; r++) {
+                    if (isEmpty(r, -1) && isStraightPathClear(r1, c1, r, -1) && isStraightPathClear(r, -1, r2, c2)) {
+                        return [r1, c1, r, -1, r, c2, r2, c2];
+                    }
+                }
+                // 右边界外路径
+                for (let r = -1; r <= config.rows; r++) {
+                    if (isEmpty(r, config.cols) && isStraightPathClear(r1, c1, r, config.cols) && isStraightPathClear(r, config.cols, r2, c2)) {
+                        return [r1, c1, r, config.cols, r, c2, r2, c2];
+                    }
+                }
+
+                // 内部双拐角路径 - 水平-垂直-水平
+                for (let r = 0; r < config.rows; r++) {
+                    if (r === r1 || r === r2) continue;
+                    if (isEmpty(r, c1) && isEmpty(r, c2)) {
+                        if (isStraightPathClear(r1, c1, r, c1) && isStraightPathClear(r, c1, r, c2) && isStraightPathClear(r, c2, r2, c2)) {
+                            return [r1, c1, r, c1, r, c2, r2, c2];
+                        }
+                    }
+                }
+                // 内部双拐角路径 - 垂直-水平-垂直
+                for (let c = 0; c < config.cols; c++) {
+                    if (c === c1 || c === c2) continue;
+                    if (isEmpty(r1, c) && isEmpty(r2, c)) {
+                        if (isStraightPathClear(r1, c1, r1, c) && isStraightPathClear(r1, c, r2, c) && isStraightPathClear(r2, c, r2, c2)) {
+                            return [r1, c1, r1, c, r2, c, r2, c2];
+                        }
+                    }
+                }
+
+                return null;
+            }
+
+            // 核心函数：判断两个方块是否可连接
+            function canConnect(row1, col1, row2, col2) {
+                if (row1 === row2 && col1 === col2) return false;
+                const tile1 = gameState.board[row1][col1];
+                const tile2 = gameState.board[row2][col2];
+                if (tile1.matched || tile2.matched || tile1.icon !== tile2.icon) return false;
+
+                // 0拐角
+                if (isStraightPathClear(row1, col1, row2, col2)) {
+                    drawConnectionLine(row1, col1, row2, col2);
+                    return true;
+                }
+
+                // 1拐角
+                const oneCornerPath = findOneCornerPath(row1, col1, row2, col2);
+                if (oneCornerPath) {
+                    drawConnectionLine(...oneCornerPath);
+                    return true;
+                }
+
+                // 2拐角
+                const twoCornerPath = findTwoCornerPath(row1, col1, row2, col2);
+                if (twoCornerPath) {
+                    drawConnectionLine(...twoCornerPath);
+                    return true;
+                }
+
+                return false;
+            }
+
+            // 连接线绘制
+            function drawConnectionLine(...points) {
+                $('.connection-line').remove();
+                
+                // 过滤有效点（仅保留棋盘内的点）
+                const validPoints = [];
+                for (let i = 0; i < points.length; i += 2) {
+                    const r = points[i];
+                    const c = points[i+1];
+                    if (r >= 0 && r < config.rows && c >= 0 && c < config.cols) {
+                        validPoints.push(r, c);
+                    }
+                }
+
+                // 绘制有效线段
+                for (let i = 0; i < validPoints.length - 2; i += 2) {
+                    const r1 = validPoints[i];
+                    const c1 = validPoints[i+1];
+                    const r2 = validPoints[i+2];
+                    const c2 = validPoints[i+3];
+                    
+                    const $tile1 = $(`.tile[data-row="${r1}"][data-col="${c1}"]`);
+                    const $tile2 = $(`.tile[data-row="${r2}"][data-col="${c2}"]`);
+                    
+                    if (!$tile1.length || !$tile2.length) continue;
+                    
+                    const tile1Pos = $tile1.offset();
+                    const tile2Pos = $tile2.offset();
+                    const x1 = tile1Pos.left + $tile1.outerWidth()/2;
+                    const y1 = tile1Pos.top + $tile1.outerHeight()/2;
+                    const x2 = tile2Pos.left + $tile2.outerWidth()/2;
+                    const y2 = tile2Pos.top + $tile2.outerHeight()/2;
+                    
+                    const length = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
+                    const angle = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
+                    const $line = $('<div>')
+                        .addClass('connection-line')
+                        .css({
+                            width: `${length}px`,
+                            transform: `rotate(${angle}deg)`,
+                            left: `${x1}px`,
+                            top: `${y1}px`,
+                            position: 'absolute',
+                            zIndex: 100
+                        });
+                    $('.game-board-container').append($line);
+                }
+            }
+            // ========== 路径检测逻辑结束 ==========
+            
+            // 随机打乱数组
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+            
+            // 提示功能
+            function showHint() {
+                if (gameState.hintsUsed >= gameState.maxHints || gameState.gameCompleted) return;
+                
+                for (let row1 = 0; row1 < config.rows; row1++) {
+                    for (let col1 = 0; col1 < config.cols; col1++) {
+                        if (gameState.board[row1][col1].matched) continue;
+                        
+                        for (let row2 = row1; row2 < config.rows; row2++) {
+                            const startCol = row2 === row1 ? col1 + 1 : 0;
+                            for (let col2 = startCol; col2 < config.cols; col2++) {
+                                if (gameState.board[row2][col2].matched) continue;
+                                
+                                if (gameState.board[row1][col1].icon === gameState.board[row2][col2].icon &&
+                                    canConnect(row1, col1, row2, col2)) {
+                                    
+                                    const $tile1 = $(`.tile[data-row="${row1}"][data-col="${col1}"]`);
+                                    const $tile2 = $(`.tile[data-row="${row2}"][data-col="${col2}"]`);
+                                    
+                                    $tile1.addClass('selected').fadeTo(200, 0.5).fadeTo(200, 1);
+                                    $tile2.addClass('selected').fadeTo(200, 0.5).fadeTo(200, 1);
+                                    
+                                    setTimeout(() => {
+                                        $tile1.removeClass('selected');
+                                        $tile2.removeClass('selected');
+                                    }, 3000);
+                                    
+                                    gameState.hintsUsed++;
+                                    $hintCountDisplay.text(gameState.maxHints - gameState.hintsUsed);
+                                    
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 重新排列剩余方块
+            function shuffleTiles() {
+                if (gameState.gameCompleted) return;
+                
+                const unmatchedTiles = [];
+                $gameBoard.find('.tile:not(.matched)').each((index, tile) => {
+                    const $tile = $(tile);
+                    unmatchedTiles.push({
+                        row: $tile.data('row'),
+                        col: $tile.data('col'),
+                        icon: $tile.data('icon'),
+                        element: tile
+                    });
+                });
+                
+                shuffleArray(unmatchedTiles);
+                
+                let index = 0;
+                $gameBoard.find('.tile:not(.matched)').each((_, tile) => {
+                    const $tile = $(tile);
+                    const newIcon = unmatchedTiles[index].icon;
+                    $tile.data('icon', newIcon).text(newIcon);
+                    gameState.board[$tile.data('row')][$tile.data('col')].icon = newIcon;
+                    index++;
+                });
+                
+                $gameStatus.text('方块已重新排列！').fadeTo(500, 0.8).fadeTo(500, 1);
+                setTimeout(() => {
+                    if (!gameState.gameCompleted) {
+                        $gameStatus.text('游戏进行中... 找到并连接相同的图标');
+                    }
+                }, 1500);
+            }
+            
+            // 绑定按钮事件
+            $startBtn.on('click', startGame);
+            $restartBtn.on('click', startGame);
+            $hintBtn.on('click', showHint);
+            $shuffleBtn.on('click', shuffleTiles);
+            
+            // 绑定图标主题选择事件
+            $iconOptions.on('click', function() {
+                const $this = $(this);
+                if (gameState.gameStarted) return;
+                
+                $iconOptions.removeClass('active');
+                $this.addClass('active');
+                
+                gameState.currentTheme = $this.data('theme');
+                initGame();
+            });
+            
+            // 初始化游戏
+            initGame();
+        });
+    </script>
+</body>
+</html>
